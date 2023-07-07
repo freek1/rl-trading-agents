@@ -28,7 +28,7 @@ def run_simulation(arg):
         pygame.init()
         screen = pygame.display.set_mode((screen_width, screen_height))
         
-    fps = 1
+    fps = 30
     clock = pygame.time.Clock()
     time = 1
     duration = 1000
@@ -206,11 +206,9 @@ def run_sim_step(preferred_direction, args):
     for event in pygame.event.get():
         # return running = False or True
         if event.type == pygame.QUIT:
-            print('test')
             return (False, states)
-        else:
-            print('test2')
-            return (True, states)
+    return (True, states)
+            
 
 if __name__ == "__main__":
     # n_agents, agent_type, move_prob, save_to_file, run_nr, run_time, enable_rendering

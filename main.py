@@ -30,15 +30,13 @@ def simulate_and_evaluate(organism, n_agents=2):
     moves = organism.predict(X)
     move = get_move(moves)
 
-    print(move) 
+    _, states = run_sim_step(move, args)
 
-    bo, states = run_sim_step(move, args)
-    print(bo, states)
+    fitness = 0
+    for i in range(n_agents):
+        # Fitness is the sum of all resA and resB
+        fitness += states[i][3] + states[i][4]
 
-    new_resources_a = states[3]
-    new_resources_b = states[4]
-
-    fitness = new_resources_a + new_resources_b
     return fitness
 
 # Ecosystem requires a function that maps an organism to a real number fitness
