@@ -30,7 +30,7 @@ class Agent:
             "resource_a": upkeep_cost,
             "resource_b": upkeep_cost,
         }
-        self.behaviour = ("",)  # 'trade_resource_a', 'trade_resource_b'
+        self.behaviour = "explore"  # 'trade_resource_a', 'trade_resource_b'
         self.agent_type = agent_type
         self.movement = "random"  # initialize as random for all agent types, since their movement changes only when wanting to trade
         self.goal_position = (None, None)  # x, y
@@ -53,25 +53,21 @@ class Agent:
         #     self.behaviour = "trade_resource_a"  # means selling resource_a
         #     # adapt movement behaviour
         #     self.movement = self.agent_type
-        #     if len(self.nearest_neighbors)==0 and self.treshold_new_neighbours==0:
+        #     if len(self.nearest_neighbors) == 0 and self.treshold_new_neighbours == 0:
         #         self.get_set_closest_neighbor(positions_tree, agents, min(k, len(agent_positions)), view_radius)
         #         self.treshold_new_neighbours=50
-        # elif (
-        #     1 / ratio > trade_threshold
-        # ):
+        # elif (1 / ratio > trade_threshold):
         #     self.color = dark_green
         #     self.behaviour = "trade_resource_b"  # means selling resource_b
         #     self.movement = self.agent_type
-        #     if len(self.nearest_neighbors)==0 and self.treshold_new_neighbours==0:
+        #     if len(self.nearest_neighbors) == 0 and self.treshold_new_neighbours == 0:
         #         self.get_set_closest_neighbor(positions_tree, agents, min(k, len(agent_positions)), view_radius)
         #         self.treshold_new_neighbours=50
         # else:
-        #     self.color = orange
-        #     self.behaviour = ""
-        #     if not self.agent_type == 'neural':
-        #         self.movement = "random"
-        self.behaviour = 'random'
-        self.movement = 'random'
+            self.color = orange
+            self.behaviour = "explore"
+            self.movement = "explore"
+
 
     def update_time_alive(self):
         self.time_alive += 1
@@ -88,35 +84,28 @@ class Agent:
             dy
         """
         dx, dy = 0, 0
-        # compute where to
-        if self.movement == "pathfind_neighbor" and len(self.nearest_neighbors) > 0: 
-            x_nn, y_nn = self.nearest_neighbors[0].get_pos()
-            self.goal_position = [x_nn, y_nn]
-            
-        if len(self.nearest_neighbors) == 0 and self.movement == "pathfind_neighbor":
-            self.movement = "random"
+        
+        # if self.behaviour == "explore":
+        #     [up_prob, right_prob, down_prob, left_prob] = self.explore_network(self.x, self.y, self.current_stock["resource_a"], self.current_stock["resource_b"])
+        # if self.behaviour == "trade_resource_a":
+        #     [up_prob, right_prob, down_prob, left_prob] = self.trade_resource_a_network(self.x, self.y, self.current_stock["resource_a"], self.current_stock["resource_b"])
+        # if self.behaviour == "trade_resource_b":
+        #     [up_prob, right_prob, down_prob, left_prob] = self.trade_resource_b_network(self.x, self.y, self.current_stock["resource_a"], self.current_stock["resource_b"])
+        
+        # move = np.argmax([up_prob, right_prob, down_prob, left_prob])
 
-        if self.movement == "pathfind_market":
-            self.goal_position = self.closest_market_pos
-            if self.in_market:
-                self.movement = "random"
-            else:
-                self.movement = "pathfind_market"
-
-        if "pathfind" in self.movement:
-            goal_x, goal_y = self.goal_position
-            if goal_y < self.y:
-                dy = -1
-            elif goal_y > self.y:
-                dy = 1
-            if goal_x < self.x:
-                dx = -1
-            elif goal_x > self.x:
-                dx = 1
+        # if move == 0:
+        #     dy = -1
+        # elif move == 1:
+        #     dx = 1
+        # elif move == 2:
+        #     dy = 1
+        # elif move == 3:
+        #     dx = -1
                 
-        if self.movement == "random":
-            dx = random.randint(-1, 1)
-            dy = random.randint(-1, 1)
+        # if self.movement == "random":
+        dx = random.randint(-1, 1)
+        dy = random.randint(-1, 1)
 
         return dx, dy
 
