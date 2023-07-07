@@ -128,6 +128,8 @@ def setup_sim(arg):
     alive_times = np.zeros([n_agents])
     alive_times.fill(duration)
 
+    if not enable_rendering:
+        screen = 0
     args = enable_rendering, agents, agent_positions, resources, gather_amount, market, move_prob, alive_times, resource_a_regen_rate, resource_b_regen_rate, max_resources, screen, resource_a, resource_b, initial_resource_a_qty_cell, initial_resource_b_qty_cell, screen_width, screen_height, clock, fps, positions_tree, time
     
     return args

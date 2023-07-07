@@ -196,18 +196,23 @@ def run_sim_step(preferred_direction, args):
         update_screen_resources(screen, resource_a, resource_b, market, initial_resource_a_qty_cell, initial_resource_b_qty_cell)
         update_screen_agents(screen, agents)
         update_screen_grid(screen, screen_width, screen_height)
-        # update the display
+
+    # update the display
+    if enable_rendering:
         pygame.display.flip()
 
     clock.tick(fps)
     time += 1
 
     # handle events
-    for event in pygame.event.get():
-        # return running = False or True
-        if event.type == pygame.QUIT:
-            return (False, states)
-    return (True, states)
+    if enable_rendering:
+        for event in pygame.event.get():
+            # return running = False or True
+            if event.type == pygame.QUIT:
+                return (False, states)
+        return (True, states)
+    else:
+        return True, states
             
 
 if __name__ == "__main__":
