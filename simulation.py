@@ -20,12 +20,6 @@ from agent import Agent
 def run_simulation(arg):
     n_agents, agent_type, move_prob, save_to_file, run_nr, run_time, enable_rendering = arg
 
-    yellow = (255, 255, 0)
-    dark_green = (0, 200, 0)
-    blue = (30, 70, 250)
-    black = (0, 0, 0)
-    white = (255, 255, 255)
-
     grid_width, grid_height, cell_size = get_grid_params()
     screen_width = grid_width * cell_size
     screen_height = grid_height * cell_size
@@ -112,10 +106,12 @@ def run_simulation(arg):
     positions_tree = KDTree(agent_positions)
     alive_times = np.zeros([n_agents])
     alive_times.fill(duration)
+    death_agents = []
 
 
     # run the simulation
     running = True
+    
 
     while running:
         # handle events
@@ -127,99 +123,78 @@ def run_simulation(arg):
         # counting the nr of alive agents for automatic stopping
         nr_agents = 0
 
-    # update the agents
+        # update the agents
         for i, agent in enumerate(agents):
             if agent.is_alive():   
                 agent.update_behaviour(positions_tree, agent_positions, agents, 6, 20)
                 nr_agents += 1
                 agent.update_time_alive()
-                x, y = agent.get_pos()
+
+                if len(agent.nearest_neighbors) == 0 and agent.treshold_new_neighbours > 0:
+                    agent.update_treshold_new_neighbours()
+                # update the resource gathering
+                chosen_resource = choose_resource(agent, resources, gather_amount)
+                take_resource(agent, chosen_resource, resources, gather_amount)
+
+                agent.set_closest_market_pos(find_closest_market_pos(agent, market))
+                agent.update_behaviour(positions_tree, agent_positions, agents, 6, 20) # to prevent two trades in same timestep
+
+                # probabalistic movement
+                if random.uniform(0, 1) < move_prob:
+                    preferred_direction = agent.choose_step()
+                    move_agent(preferred_direction, agent, agents)
+
+                # update market bool
+                agent.set_in_market(in_market(agent, market))
+
+                # closest distance to market
+                agent.set_closest_market_pos(find_closest_market_pos(agent, market))
+                
+                agent_positions[i] = agent.get_pos()
 
 
-        for resource in resources:  
-            regen_rate = (
-                resource_a_regen_rate if resource == "resource_a" else resource_b_regen_rate
-            )  # get regen_rate for specific resource
-            for y in range(grid_height):
-                for x in range(grid_width):
-                    if (
-                        resources[resource][x][y]
-                        < max_resources[resource][x][y] - regen_rate
-                    ):
-                        resources[resource][x][y] += regen_rate
-                    else:
-                        resources[resource][x][y] = max_resources[resource][x][y]  # set to max        
+            death_agents = []
+            # upkeep of agents and check if agent can survive
+            for agent in agents:
+                agent.upkeep()
+                
+                # if agent died, then remove from list and save death time
+                if not agent.is_alive():
+                    death_agents.append(agent)
+                    alive_times[agent.id] = time
+
+            for death_agent in death_agents:
+                agents.remove(death_agent)
+                agent_positions.remove(death_agent.get_pos())
+            
+            if len(agent_positions) > 0:
+                # updating KD-tree
+                positions_tree = KDTree(agent_positions)  
+
+
+            for resource in resources:  
+                regen_rate = (resource_a_regen_rate if resource == "resource_a" else resource_b_regen_rate)  # get regen_rate for specific resource
+                for y in range(grid_height):
+                    for x in range(grid_width):
+                        if (resources[resource][x][y] < max_resources[resource][x][y] - regen_rate):
+                            resources[resource][x][y] += regen_rate
+                        else:
+                            resources[resource][x][y] = max_resources[resource][x][y]  # set to max        
 
         if enable_rendering:
-            # clear the screen
-            screen.fill(white)
-            # draw resources
-            for row in range(grid_height):
-                for col in range(grid_width):
-                    resource_a_value = resource_a[row][col]
-                    resource_b_value = resource_b[row][col]
-                    # map the resource value to a shade of brown or green
-                    if market[row][col]:
-                        blended_color = yellow
-                    else:
-                        # resource_b: g_re_en
-                        inv_resource_b_color = tuple(map(lambda i, j: i - j, white, dark_green))
-                        resource_b_percentage = resource_b_value / initial_resource_b_qty_cell
-                        inv_resource_b_color = tuple(
-                            map(lambda i: i * resource_b_percentage, inv_resource_b_color)
-                        )
-                        resource_b_color = tuple(map(lambda i, j: i - j, white, inv_resource_b_color))
-                        resource_a: blue
-                        inv_resource_a_color = tuple(map(lambda i, j: i - j, white, blue))
-                        resource_a_percentage = resource_a_value / initial_resource_a_qty_cell
-                        inv_resource_a_color = tuple(
-                            map(lambda i: i * resource_a_percentage, inv_resource_a_color)
-                        )
-                        resource_a_color = tuple(map(lambda i, j: i - j, white, inv_resource_a_color))
-
-                        # weighted blended color
-                        if resource_b_percentage > 0.0 and resource_b_percentage > 0.0:
-                            resource_b_ratio = resource_b_percentage / (resource_b_percentage + resource_a_percentage)
-                            resource_a_ratio = resource_a_percentage / (resource_b_percentage + resource_a_percentage)
-                        elif resource_b_percentage == 0.0 and resource_a_percentage == 0.0:
-                            resource_b_ratio = resource_a_ratio = 0.5
-                        elif resource_b_percentage == 0.0:
-                            resource_a_ratio = 1.0
-                            resource_b_ratio = 0.0
-                        else:
-                            resource_a_ratio = 0.0
-                            resource_b_ratio = 1.0
-                        blended_color = tuple(map(lambda f, w: f*resource_b_ratio + w*resource_a_ratio, resource_b_color, resource_a_color))
-
-                    rect = pygame.Rect(row * cell_size, col * cell_size, cell_size, cell_size)
-                    draw_rect_alpha(screen, blended_color, rect)
-
-            # draw agents
-            mini_rect_size = 14
-            for id, agent in enumerate(agents):
-                if agent.is_alive():
-                    x, y = agent.get_pos()
-                    if enable_rendering:
-                        rect = pygame.Rect(x * cell_size + (cell_size - mini_rect_size)/2, y * cell_size + (cell_size - mini_rect_size)/2, mini_rect_size, mini_rect_size)
-                        pygame.draw.rect(screen, agent.get_color(), rect)
-
-            # draw the grid
-            for x in range(0, screen_width, cell_size):
-                pygame.draw.line(screen, black, (x, 0), (x, screen_height))
-            for y in range(0, screen_height, cell_size):
-                pygame.draw.line(screen, black, (0, y), (screen_width, y))
-
+            update_screen_resources(screen, resource_a, resource_b, market, initial_resource_a_qty_cell, initial_resource_b_qty_cell)
+            update_screen_agents(screen, agents)
+            update_screen_grid(screen, screen_width, screen_height)
             # update the display
             pygame.display.flip()
 
-    clock.tick(fps)
-    dt = clock.tick(fps) / 100
-    time += 1
+        clock.tick(fps)
+        time += 1
 
 
 
 
 if __name__ == "__main__":
     # n_agents, agent_type, move_prob, save_to_file, run_nr, run_time, enable_rendering
-    arg = (2, 'neural_agent', 1, False, 1, 1000, True)
+    arg = (2, 'random', 1, False, 1, 1000, True)
     run_simulation(arg)

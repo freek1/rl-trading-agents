@@ -27,15 +27,12 @@ class Agent:
             "resource_b": random.uniform(4, 8),
         }
         self.upkeep_cost = {
-            "a": upkeep_cost,
-            "b": upkeep_cost,
+            "resource_a": upkeep_cost,
+            "resource_b": upkeep_cost,
         }
         self.behaviour = ("",)  # 'trade_resource_a', 'trade_resource_b'
         self.agent_type = agent_type
-        if not self.agent_type == 'neural':
-            self.movement = "random"  # initialize as random for all agent types, since their movement changes only when wanting to trade
-        else:
-            self.movement = 'neural_movement'
+        self.movement = "random"  # initialize as random for all agent types, since their movement changes only when wanting to trade
         self.goal_position = (None, None)  # x, y
         self.nearest_neighbors = []  # list of (x,y) of the nearest neighbors
         self.closest_market_pos = (None, None)
@@ -44,15 +41,89 @@ class Agent:
         self.treshold_new_neighbours = 0
         self.utility = 0
 
-    def print_info(self):
-        if self.alive:
-            print(f"{self.current_stock=} \n{self.behaviour=} \n{self.get_pos()=}")
+
+
+
+    def update_behaviour(self, positions_tree, agent_positions, agents, k, view_radius):
+        # update trade behaviour
+        
+        # ratio = self.calculate_resource_ratio("resource_a", "resource_b")
+        # if (ratio > trade_threshold):
+        #     self.color = dark_brown
+        #     self.behaviour = "trade_resource_a"  # means selling resource_a
+        #     # adapt movement behaviour
+        #     self.movement = self.agent_type
+        #     if len(self.nearest_neighbors)==0 and self.treshold_new_neighbours==0:
+        #         self.get_set_closest_neighbor(positions_tree, agents, min(k, len(agent_positions)), view_radius)
+        #         self.treshold_new_neighbours=50
+        # elif (
+        #     1 / ratio > trade_threshold
+        # ):
+        #     self.color = dark_green
+        #     self.behaviour = "trade_resource_b"  # means selling resource_b
+        #     self.movement = self.agent_type
+        #     if len(self.nearest_neighbors)==0 and self.treshold_new_neighbours==0:
+        #         self.get_set_closest_neighbor(positions_tree, agents, min(k, len(agent_positions)), view_radius)
+        #         self.treshold_new_neighbours=50
+        # else:
+        #     self.color = orange
+        #     self.behaviour = ""
+        #     if not self.agent_type == 'neural':
+        #         self.movement = "random"
+        self.behaviour = 'random'
+        self.movement = 'random'
+
+    def update_time_alive(self):
+        self.time_alive += 1
+
+    def get_pos(self):
+        return self.x, self.y
+    
+    def choose_step(self):
+        """pick the next direction to walk in for the agent
+        input:
+            self: agent
+        output:
+            dx
+            dy
+        """
+        dx, dy = 0, 0
+        # compute where to
+        if self.movement == "pathfind_neighbor" and len(self.nearest_neighbors) > 0: 
+            x_nn, y_nn = self.nearest_neighbors[0].get_pos()
+            self.goal_position = [x_nn, y_nn]
+            
+        if len(self.nearest_neighbors) == 0 and self.movement == "pathfind_neighbor":
+            self.movement = "random"
+
+        if self.movement == "pathfind_market":
+            self.goal_position = self.closest_market_pos
+            if self.in_market:
+                self.movement = "random"
+            else:
+                self.movement = "pathfind_market"
+
+        if "pathfind" in self.movement:
+            goal_x, goal_y = self.goal_position
+            if goal_y < self.y:
+                dy = -1
+            elif goal_y > self.y:
+                dy = 1
+            if goal_x < self.x:
+                dx = -1
+            elif goal_x > self.x:
+                dx = 1
+                
+        if self.movement == "random":
+            dx = random.randint(-1, 1)
+            dy = random.randint(-1, 1)
+
+        return dx, dy
 
     def set_in_market(self, in_market):
         self.in_market = in_market
 
-    def update_time_alive(self):
-        self.time_alive += 1
+    
 
     def get_time_alive(self):
         return self.time_alive
@@ -60,34 +131,7 @@ class Agent:
     def set_movement(self, movement):
         self.movement = movement
 
-    def update_behaviour(self, positions_tree, agent_positions, agents, k, view_radius):
-        # update trade behaviour
-        
-        ratio = self.calculate_resource_ratio("resource_a", "resource_b")
-        if (
-            ratio > trade_threshold
-        ):
-            self.color = dark_brown
-            self.behaviour = "trade_resource_a"  # means selling resource_a
-            # adapt movement behaviour
-            self.movement = self.agent_type
-            if len(self.nearest_neighbors)==0 and self.treshold_new_neighbours==0:
-                self.get_set_closest_neighbor(positions_tree, agents, min(k, len(agent_positions)), view_radius)
-                self.treshold_new_neighbours=50
-        elif (
-            1 / ratio > trade_threshold
-        ):
-            self.color = dark_green
-            self.behaviour = "trade_resource_b"  # means selling resource_b
-            self.movement = self.agent_type
-            if len(self.nearest_neighbors)==0 and self.treshold_new_neighbours==0:
-                self.get_set_closest_neighbor(positions_tree, agents, min(k, len(agent_positions)), view_radius)
-                self.treshold_new_neighbours=50
-        else:
-            self.color = orange
-            self.behaviour = ""
-            if not self.agent_type == 'neural':
-                self.movement = "random"
+    
             
     def get_set_closest_neighbor(self, positions_tree, agents, k, view_radius):
         # update agent position for the k_d-tree
@@ -109,54 +153,7 @@ class Agent:
                     neighboring_agents.append(agents[ids])
             self.set_nearest_neighbors(neighboring_agents)
     
-    def choose_step(self, agent_positions):
-        """pick the next direction to walk in for the agent
-        input:
-            self: agent
-        output:
-            dx
-            dy
-        """
-        dx, dy = 0, 0
-        # compute where to
-        if self.movement == "pathfind_neighbor" and len(self.nearest_neighbors)>0: 
-            # if it could not find any suitable neighbors, move randomly for 100 timesteps
-            # -> force it to move randomly
-            x_nn, y_nn = self.nearest_neighbors[0].get_pos()
-            self.goal_position = [x_nn, y_nn]
-            
-        if len(self.nearest_neighbors)==0 and self.movement == "pathfind_neighbor":
-            self.movement = "random"
-
-        if self.movement == "pathfind_market":
-            self.goal_position = self.closest_market_pos
-            if self.in_market:
-                self.movement = "random"
-            else:
-                self.movement = "pathfind_market"
-
-        # move
-        if "pathfind" in self.movement:
-            goal_x, goal_y = self.goal_position
-            if goal_y < self.y:
-                dy = -1
-            elif goal_y > self.y:
-                dy = 1
-            if goal_x < self.x:
-                dx = -1
-            elif goal_x > self.x:
-                dx = 1
-                
-        if self.movement == "random":
-            dx = random.randint(-1, 1)
-            dy = random.randint(-1, 1)
-
-        if self.agent_type == 'neural':
-            util = self.utility
-            
-
-
-        return dx, dy
+    
 
     def compatible(self, agent_b):
         """compatible if both agents are in market when this is the simulation situation."""
@@ -254,9 +251,6 @@ class Agent:
 
     def is_at(self, x, y):
         return self.x == x and self.y == y
-
-    def get_pos(self):
-        return self.x, self.y
 
     def get_behaviour(self):
         return self.behaviour

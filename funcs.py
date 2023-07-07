@@ -10,6 +10,13 @@ cell_size = 20
 grid_width = 40 
 grid_height = 40
 
+white = (255, 255, 255)
+yellow = (255, 255, 0)
+blue = (30, 70, 250)
+dark_green = (0, 200, 0)
+black = (0, 0, 0)
+
+
 def get_grid_params():
     ''' returns the size of the grid
     input: 
@@ -18,6 +25,66 @@ def get_grid_params():
         tuple, (width, height)
     '''
     return grid_width, grid_height, cell_size
+
+def update_screen_resources(screen, resource_a, resource_b, market, initial_resource_a_qty_cell, initial_resource_b_qty_cell):
+    # clear the screen
+    screen.fill(white)
+    # draw resources
+    for row in range(grid_height):
+        for col in range(grid_width):
+            resource_a_value = resource_a[row][col]
+            resource_b_value = resource_b[row][col]
+            # map the resource value to a shade of brown or green
+            if market[row][col]:
+                blended_color = yellow
+            else:
+                # resource_b: green
+                inv_resource_b_color = tuple(map(lambda i, j: i - j, white, dark_green))
+                resource_b_percentage = resource_b_value / initial_resource_b_qty_cell
+                inv_resource_b_color = tuple(
+                    map(lambda i: i * resource_b_percentage, inv_resource_b_color)
+                )
+                resource_b_color = tuple(map(lambda i, j: i - j, white, inv_resource_b_color))
+                resource_a: blue
+                inv_resource_a_color = tuple(map(lambda i, j: i - j, white, blue))
+                resource_a_percentage = resource_a_value / initial_resource_a_qty_cell
+                inv_resource_a_color = tuple(
+                    map(lambda i: i * resource_a_percentage, inv_resource_a_color)
+                )
+                resource_a_color = tuple(map(lambda i, j: i - j, white, inv_resource_a_color))
+
+                # weighted blended color
+                if resource_b_percentage > 0.0 and resource_b_percentage > 0.0:
+                    resource_b_ratio = resource_b_percentage / (resource_b_percentage + resource_a_percentage)
+                    resource_a_ratio = resource_a_percentage / (resource_b_percentage + resource_a_percentage)
+                elif resource_b_percentage == 0.0 and resource_a_percentage == 0.0:
+                    resource_b_ratio = resource_a_ratio = 0.5
+                elif resource_b_percentage == 0.0:
+                    resource_a_ratio = 1.0
+                    resource_b_ratio = 0.0
+                else:
+                    resource_a_ratio = 0.0
+                    resource_b_ratio = 1.0
+                blended_color = tuple(map(lambda f, w: f*resource_b_ratio + w*resource_a_ratio, resource_b_color, resource_a_color))
+
+            rect = pygame.Rect(row * cell_size, col * cell_size, cell_size, cell_size)
+            draw_rect_alpha(screen, blended_color, rect)
+
+def update_screen_agents(screen, agents):
+    # draw agents
+    mini_rect_size = 14
+    for id, agent in enumerate(agents):
+        if agent.is_alive():
+            x, y = agent.get_pos()
+            rect = pygame.Rect(x * cell_size + (cell_size - mini_rect_size)/2, y * cell_size + (cell_size - mini_rect_size)/2, mini_rect_size, mini_rect_size)
+            pygame.draw.rect(screen, agent.get_color(), rect)
+
+def update_screen_grid(screen, screen_width, screen_height):
+    # draw the grid
+    for x in range(0, screen_width, cell_size):
+        pygame.draw.line(screen, black, (x, 0), (x, screen_height))
+    for y in range(0, screen_height, cell_size):
+        pygame.draw.line(screen, black, (0, y), (screen_width, y))
 
 def draw_rect_alpha(surface, color, rect):
     ''' draws a rectangle with an alpha channel
@@ -52,9 +119,9 @@ def choose_resource(agent:Agent, resources, gather_amount):
 
 def other_resource(resource: str):
     # return the opposing resource name
-    if resource == 'wood':
-        return 'food'
-    return 'wood'
+    if resource == 'resource_a':
+        return 'resource_b'
+    return 'resource_a'
 
 def take_resource(agent: Agent, chosen_resource, resources, gather_amount):
     ''' takes a resource from the chosen resource
@@ -111,7 +178,7 @@ def move_agent(preferred_direction, agent, agents):
     x, y = agent.get_pos()
     dx, dy = preferred_direction
     # check if preffered direction is possible 
-    if 0 <= x + dx < g_ri_d_w_id_th and  0 <= y + dy < g_ri_d_h_ei_gh_t:
+    if 0 <= x + dx < grid_width and  0 <= y + dy < grid_height:
         new_x = x + dx
         new_y = y + dy
         if cell_available(new_x, new_y, agents)[0]:
@@ -123,7 +190,7 @@ def move_agent(preferred_direction, agent, agents):
             while not found and possible_moves:
                 dx,dy = random.choice(possible_moves)
                 possible_moves.remove((dx, dy))
-                if 0 <= x+dx < g_ri_d_w_id_th and 0 <= y+dy < g_ri_d_h_ei_gh_t:
+                if 0 <= x+dx < grid_width and 0 <= y+dy < grid_height:
                     new_x = x + dx
                     new_y = y + dy
                     if cell_available(new_x, new_y, agents)[0]:
