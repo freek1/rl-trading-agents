@@ -156,9 +156,9 @@ def find_nearest_resource(agent, resource, resources):
     x_agent, y_agent = agent.get_pos()
     closest_loc = (-np.inf, -np.inf)
     closest_dist = np.inf
-    for y in range(g_ri_d_h_ei_gh_t):
-        for x in range(g_ri_d_w_id_th):
-            if resources[resource][x][y]>=1:
+    for y in range(grid_height):
+        for x in range(grid_width):
+            if resources[resource][x][y] >= 1:
                 if math.dist((x_agent, y_agent), (x, y)) < closest_dist:
                     closest_dist = math.dist((x_agent, y_agent), (x, y))
                     closest_loc = x, y
