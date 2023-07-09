@@ -57,11 +57,9 @@ def simulate_and_evaluate(organism, n_agents):
     return fitness
 
 def process_generation(i):
-    start = time.time()
+    print('Running generation', i)
     ecosystem.generation()
     this_generation_best = ecosystem.get_best_organism(include_reward=True)
-    end = time.time()
-    print(f'Generation {i} finished in {end-start}s.')
     return this_generation_best[1]
 
 def exec_series(generations):
@@ -71,14 +69,17 @@ def exec_series(generations):
         best = process_generation(gen)
         results.append(best)
     end = time.time()
-    print(f'Generations finished in {end-start}s.')
+    print(f'Generation {i} finished in {end-start}s.')
     return results
 
 def exec_parallel(generations):
+    start = time.time()
     cores = multiprocessing.cpu_count()
     print(f'cores: {cores}, spawning {np.min(int(cores*1.25), generations)} workers')
     pool = multiprocessing.Pool(processes = np.min(int(cores*1.25), generations))
     results = pool.map(process_generation, range(generations))
+    end = time.time()
+    print(f'Generations parallel finished in {end-start}s.')
     pool.close()
     pool.join()
     return results
