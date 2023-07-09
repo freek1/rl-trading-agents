@@ -11,6 +11,7 @@ from multiprocessing import Pool
 
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 # The function to create the initial population
 organism_creator = lambda : Organism([4, 16, 32, 16, 4], output='softmax')
@@ -61,6 +62,7 @@ def process_generation(i):
 
 
 if __name__ == '__main__':
+    start = time.time()
     generations = 21
     pool = multiprocessing.Pool(processes=8)
     results = pool.map(process_generation, range(generations))
@@ -68,6 +70,9 @@ if __name__ == '__main__':
     pool.join()
 
     best_organism_scores = results
+    end = time.time()
+    
+    print('Elapsed time: ', end - start)
 
     plt.plot(best_organism_scores)
     plt.xlabel('Generation')
