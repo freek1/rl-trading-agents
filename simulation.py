@@ -1,4 +1,5 @@
 import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 
 import pygame
 import random
@@ -28,11 +29,13 @@ def run_simulation(arg):
     if enable_rendering:
         pygame.init()
         screen = pygame.display.set_mode((screen_width, screen_height))
+    else: 
+        screen = 0
         
     fps = 30
     clock = pygame.time.Clock()
     time = 1
-    duration = 1000
+    duration = run_time
 
     # Creating market squares
     market_size = 6
@@ -116,7 +119,9 @@ def run_simulation(arg):
     args = enable_rendering, agents, agent_positions, resources, gather_amount, market, move_prob, alive_times, resource_a_regen_rate, resource_b_regen_rate, max_resources, screen, resource_a, resource_b, initial_resource_a_qty_cell, initial_resource_b_qty_cell, screen_width, screen_height, clock, fps, positions_tree, time
 
     while running:
-        running, _ = run_sim_step([2, 2], args)
+        running, states = run_sim_step([2, 2], args)
+
+    return False, states
         
 
 
@@ -178,7 +183,11 @@ def run_sim_step(preferred_direction, args):
 
         for death_agent in death_agents:
             agents.remove(death_agent)
-            agent_positions.remove(death_agent.get_pos())
+            # print(agent_positions, list(death_agent.get_pos()))
+            try:
+                agent_positions.remove(list(death_agent.get_pos()))
+            except:
+                continue
         
         if len(agent_positions) > 0:
             # updating KD-tree
@@ -206,6 +215,10 @@ def run_sim_step(preferred_direction, args):
     clock.tick(fps)
     time += 1
 
+    if len(agents) == 0 or time == 500:
+        print('Stopping sim: no agents or time up.')
+        return (False, states)
+
     # handle events
     if enable_rendering:
         for event in pygame.event.get():
@@ -214,10 +227,17 @@ def run_sim_step(preferred_direction, args):
                 return (False, states)
         return (True, states)
     else:
-        return True, states
-            
+        return (True, states)
+
+def task(iteration):
+    arg = (50, 'neural_agent', 1, False, 1, 1000, False)
+    return run_simulation(arg)    
 
 if __name__ == "__main__":
     # n_agents, agent_type, move_prob, save_to_file, run_nr, run_time, enable_rendering
-    arg = (2, 'neural_agent', 1, False, 1, 1000, True)
-    run_simulation(arg)
+    # run_simulation(arg)
+    pool = multiprocessing.Pool()
+    for res in pool.map(task, range(4)):
+        print(res)
+    pool.close()
+    pool.join()
