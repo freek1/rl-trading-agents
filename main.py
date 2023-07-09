@@ -29,10 +29,10 @@ def simulate_and_evaluate(organism, n_agents):
 
     X = np.zeros((n_agents, 4))
     _, states = run_sim_step([2, 2], args)
-    print(X.shape, states.shape)
 
-    for i in range(n_agents):
-        X[i, :] = states[i]
+    # for i in range(n_agents):
+    #     X[i, :] = states[i]
+    X = np.array(states)
     moves = organism.predict(X)
     move = get_move(moves)
 
@@ -68,7 +68,6 @@ if __name__ == '__main__':
     pool.join()
 
     best_organism_scores = results
-    print(best_organism_scores)
 
     plt.plot(best_organism_scores)
     plt.xlabel('Generation')
