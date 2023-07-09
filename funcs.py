@@ -39,6 +39,7 @@ def get_move(list_of_moves):
     return list_moves
 
 def setup_sim(arg):
+    seed = 57
     n_agents, agent_type, move_prob, save_to_file, run_nr, run_time, enable_rendering = arg
 
     grid_width, grid_height, cell_size = get_grid_params()
@@ -55,7 +56,7 @@ def setup_sim(arg):
     duration = 1000
 
     # Creating market squares
-    market_size = 6
+    market_size = 3
     market = np.full((grid_height, grid_width), False, dtype=bool)
     for x in range(int((grid_width / 2) - market_size), int((grid_width / 2) + market_size)):
             for y in range(int((grid_height / 2) - market_size), int((grid_height / 2) + market_size)):
@@ -75,12 +76,27 @@ def setup_sim(arg):
         for y in range(0, 8):
             if not market[x][y]:
                 resource_b_cell_count += 1
-                resource_a[x][y] = max_resource_a  # random.uniform(m_in_w_oo_d, m_ax_w_oo_d)
+                resource_a[x][y] = max_resource_a 
     for x in range(0, grid_height):
         for y in range(32, grid_height):
             if not market[x][y]:
                 resource_a_cell_count += 1
-                resource_b[x][y] = max_resource_b  # random.uniform(m_in_f_oo_d, m_ax_f_oo_d)
+                resource_b[x][y] = max_resource_b 
+
+    # blob_size = 3
+    # random_array = np.random.rand(20, 20)
+    # blob_types = np.where(random_array < 0.5, 0, 1)
+    # for x in range(0, grid_width):
+    #     for y in range(0, grid_height):
+    #         if (int(x / blob_size) % 2 == 0 and int(y / blob_size) % 2 == 0):
+    #             x_blob_index = int(x / blob_size)
+    #             y_blob_index = int(y / blob_size)
+    #             if blob_types[x_blob_index, y_blob_index] == 0:
+    #                 resource_a_cell_count += 1
+    #                 resource_a[x][y] = max_resource_a 
+    #             else:
+    #                 resource_b_cell_count += 1
+    #                 resource_b[x][y] = max_resource_b 
 
     # resource settings
     total_resource_a_regen = 4.2
@@ -113,8 +129,11 @@ def setup_sim(arg):
     agents = []
     agent_positions = []
 
+    market = np.full((grid_height, grid_width), False, dtype=bool)
+
     # creating agents
     for i in range(n_agents):
+        random.seed(seed)
         x = random.randint(0, grid_width - 2)
         y = random.randint(0, grid_height - 2)
         color = (255,110,0)

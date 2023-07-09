@@ -2,12 +2,12 @@
 import numpy as np
 
 class Ecosystem():
-    def __init__(self, original_f, scoring_function, population_size=100, holdout='sqrt', mating=True):
+    def __init__(self, original_f, scoring_function, population_size, holdout='sqrt', mating=True):
         """
         original_f must be a function to produce Organisms, used for the original population
         scoring_function must be a function which accepts an Organism as input and returns a float
         """
-        self.population_size = population_size=100
+        self.population_size = population_size
         self.population = [original_f() for _ in range(population_size)]
         self.scoring_function = scoring_function
         if holdout == 'sqrt':
