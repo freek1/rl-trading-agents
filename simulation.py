@@ -18,6 +18,7 @@ from funcs import *
 from agent import Agent
 
 def run_simulation(arg):
+    seed = 57
     n_agents, agent_type, move_prob, save_to_file, run_nr, run_time, enable_rendering = arg
 
     grid_width, grid_height, cell_size = get_grid_params()
@@ -93,6 +94,7 @@ def run_simulation(arg):
     agent_positions = []
 
     # creating agents
+    random.seed(seed)
     for i in range(n_agents):
         x = random.randint(0, grid_width - 2)
         y = random.randint(0, grid_height - 2)

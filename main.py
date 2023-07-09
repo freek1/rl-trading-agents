@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # The function to create the initial population
-organism_creator = lambda : Organism([4, 16, 16, 16, 4], output='softmax')
+organism_creator = lambda : Organism([4, 16, 32, 16, 4], output='softmax')
 
 
 def simulate_and_evaluate(organism, n_agents):
@@ -29,6 +29,7 @@ def simulate_and_evaluate(organism, n_agents):
 
     X = np.zeros((n_agents, 4))
     _, states = run_sim_step([2, 2], args)
+    print(X.shape, states.shape)
 
     for i in range(n_agents):
         X[i, :] = states[i]
@@ -47,7 +48,7 @@ def simulate_and_evaluate(organism, n_agents):
 scoring_function = lambda organism : simulate_and_evaluate(organism, n_agents=50)
 # Create the ecosystem
 ecosystem = Ecosystem(organism_creator, scoring_function, 
-                      population_size=100, holdout=0.1, mating=True)
+                      population_size=50, holdout=0.1, mating=True)
 # Save the fitness score of the best organism in each generation
 best_organism_scores = [ecosystem.get_best_organism(include_reward=True)[1]]
 
@@ -60,8 +61,8 @@ def process_generation(i):
 
 
 if __name__ == '__main__':
-    generations = 101
-    pool = multiprocessing.Pool(processes=16)
+    generations = 21
+    pool = multiprocessing.Pool(processes=8)
     results = pool.map(process_generation, range(generations))
     pool.close()
     pool.join()
