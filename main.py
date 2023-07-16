@@ -12,6 +12,7 @@ from multiprocessing import Pool
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+from numba import njit
 
 def simulate_and_evaluate(organism, n_agents, n_steps):
     """
@@ -22,7 +23,6 @@ def simulate_and_evaluate(organism, n_agents, n_steps):
     arg = (n_agents, 'neural_agent', 1, False, 1, 500, False)
     args = setup_sim(arg)
 
-    X = np.zeros((n_agents, 4))
     _, states = run_sim_step([2, 2], args)
 
     fitness = 0
@@ -71,15 +71,15 @@ def exec_parallel(generations):
     return results
 
 # The function to create the initial population
-organism_creator = lambda : Organism([4, 32, 64, 32, 4], output='softmax')
+organism_creator = lambda : Organism([4 + 28, 64, 32, 4], output='softmax')
 # Ecosystem requires a function that maps an organism to a real number fitness
-scoring_function = lambda organism : simulate_and_evaluate(organism, n_agents=2, n_steps=20)
+scoring_function = lambda organism : simulate_and_evaluate(organism, n_agents=2, n_steps=40)
 # Create the ecosystem
 ecosystem = Ecosystem(organism_creator, scoring_function, 
-                        population_size=200, holdout=0.1, mating=True)
+                        population_size=250, holdout=0.1, mating=False)
 
 if __name__ == '__main__':
-    generations = 201
+    generations = 16
 
     start = time.time()
     best_organism_scores_parallel = exec_parallel(generations)

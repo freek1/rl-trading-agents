@@ -40,6 +40,7 @@ class Agent:
         self.market = market
         self.treshold_new_neighbours = 0
         self.utility = 0
+        self.food_locations = np.zeros((28,))
 
 
 
@@ -120,6 +121,11 @@ class Agent:
     def set_movement(self, movement):
         self.movement = movement
 
+    def set_food_locations(self, food_locations):
+        self.food_locations = food_locations
+
+    def get_food_locations(self):
+        return np.array(self.food_locations)
     
             
     def get_set_closest_neighbor(self, positions_tree, agents, k, view_radius):

@@ -235,6 +235,48 @@ def draw_rect_alpha(surface, color, rect):
     pygame.draw.rect(shape_surf, color, shape_surf.get_rect())
     surface.blit(shape_surf, rect)
 
+def set_food_locations(agent, fov, resource_a, resource_b):
+    ''' sets the food locations of the agent based on the fov
+    input: 
+        agent: object
+        fov: int, field of view
+        resource_a: 2d array
+        resource_b: 2d array
+    output:
+        None
+    '''
+    # get the agent's position and the food locations in the fov of the agent's position'''
+    
+    x, y = agent.get_pos()
+    food_locations = np.zeros((28,))
+    counter = 0
+    for i in range(x - fov, x + fov + 1):
+        for j in range(y - fov, y + fov + 1):
+            if i >= 0 and j >= 0 and i < grid_width and j < grid_height and counter < len(food_locations) - 1:
+                if resource_a[i][j] > 0:
+                    food_locations[counter] = i
+                    counter += 1
+                    food_locations[counter] = j
+                    counter += 1
+                if resource_b[i][j] > 0:
+                    food_locations[counter] = i
+                    counter += 1
+                    food_locations[counter] = j
+                    counter += 1
+                if counter == len(food_locations) - 1:
+                    agent.set_food_locations(food_locations)
+                    break
+                    
+
+def flatten_list(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(flatten_list(item))
+        else:
+            result.append(item)
+    return result
+
 def choose_resource(agent:Agent, resources, gather_amount):
     ''' returns resource based on which resource is available
     input: 

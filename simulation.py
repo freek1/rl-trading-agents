@@ -29,7 +29,6 @@ def run_simulation(arg):
     return False, states
         
 
-
 def run_sim_step(preferred_direction, args):
     # unpack arguments
     enable_rendering, agents, agent_positions, resources, gather_amount, market, move_prob, alive_times, resource_a_regen_rate, resource_b_regen_rate, max_resources, screen, resource_a, resource_b, initial_resource_a_qty_cell, initial_resource_b_qty_cell, screen_width, screen_height, clock, fps, positions_tree, time = args
@@ -70,11 +69,15 @@ def run_sim_step(preferred_direction, args):
 
             # closest distance to market
             agent.set_closest_market_pos(find_closest_market_pos(agent, market))
+
+            # update agent food locations
+            set_food_locations(agent, 10, resource_a, resource_b)
             
             x, y = agent.get_pos()
             agent_positions[i] = [x, y]
-            states.append([x, y, agent.current_stock["resource_a"], agent.current_stock["resource_b"]])
-
+            info_agent = [x, y, agent.current_stock["resource_a"], agent.current_stock["resource_b"], list(agent.get_food_locations())]
+            info_agent_flat = flatten_list(info_agent)
+            states.append(list(np.ravel(info_agent_flat)))
 
         death_agents = []
         # upkeep of agents and check if agent can survive
